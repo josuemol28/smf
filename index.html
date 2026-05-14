@@ -68,13 +68,19 @@
     </style>
 </head>
 
-<body class="text-slate-800 h-screen flex overflow-hidden bg-slate-50 relative">
+<body class="text-slate-800 h-screen flex flex-col lg:flex-row overflow-hidden bg-slate-50 relative">
 
-    <div id="app-container" class="flex w-full h-full overflow-hidden">
-        <aside
-            class="w-80 bg-fedemec-dark border-r border-slate-800 flex flex-col h-full shadow-lg z-10 shrink-0 transition-all overflow-y-auto custom-scrollbar relative">
+    <!-- Mobile Overlay -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden lg:hidden"></div>
+
+    <div id="app-container" class="flex w-full h-full overflow-hidden relative">
+        <aside id="sidebar"
+            class="fixed lg:relative w-80 bg-fedemec-dark border-r border-slate-800 flex flex-col h-full shadow-lg z-40 shrink-0 transition-all duration-300 -translate-x-full lg:translate-x-0 overflow-y-auto custom-scrollbar">
             <div class="p-6 bg-fedemec-dark border-b border-slate-800 sticky top-0 z-20">
-                <div class="flex flex-col items-center text-center">
+                <div class="flex flex-col items-center text-center relative">
+                    <button onclick="toggleSidebar()" class="lg:hidden absolute -top-2 -right-2 p-2 text-slate-400 hover:text-white transition">
+                        <i class="ph ph-x text-2xl"></i>
+                    </button>
                     <!-- Logo FEDEMEC integrado -->
                     <div class="bg-white rounded-xl p-2 mb-4 shadow-inner">
                         <img src="https://lh3.googleusercontent.com/d/1Ddp6T0ZO_gWFndmjAyuSsbfpzRRXmbY_"
@@ -122,31 +128,38 @@
 
         <main class="flex-1 flex flex-col h-full relative bg-slate-50 z-10">
             <header
-                class="bg-white border-b border-slate-200 h-20 flex items-center justify-between px-8 shrink-0 shadow-sm">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800">Tablero de Autoevaluación</h2>
-                    <p class="text-sm text-slate-500">Análisis de resultados y métricas de desempeño.</p>
+                class="bg-white border-b border-slate-200 min-h-[5rem] lg:h-20 flex items-center justify-between px-4 lg:px-8 shrink-0 shadow-sm gap-4">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                        <i class="ph ph-list text-2xl"></i>
+                    </button>
+                    <div>
+                        <h2 class="text-lg lg:text-xl font-bold text-slate-800 leading-tight">Tablero</h2>
+                        <p class="text-xs lg:text-sm text-slate-500 hidden sm:block">Análisis de resultados y métricas.</p>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 lg:gap-4">
                     <div id="statusBadge"
-                        class="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200 transition-all">
+                        class="hidden md:flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200 transition-all">
                         <i class="ph ph-spinner animate-spin"></i> Iniciando...
                     </div>
 
                     <button onclick="fetchData()"
-                        class="flex items-center gap-2 text-sm font-medium text-slate-600 bg-slate-100 border border-slate-200 px-4 py-2.5 rounded-lg hover:bg-slate-200 transition">
-                        <i class="ph ph-arrows-clockwise"></i> Actualizar
+                        class="p-2.5 lg:px-4 lg:py-2.5 text-slate-600 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition" title="Actualizar">
+                        <i class="ph ph-arrows-clockwise"></i>
+                        <span class="hidden lg:inline ml-2 text-sm font-medium">Actualizar</span>
                     </button>
 
                     <button onclick="openExportModal()"
-                        class="flex items-center gap-2 text-sm font-bold text-white bg-fedemec-accent hover:bg-amber-700 px-5 py-2.5 rounded-lg shadow-md transition-all transform active:scale-95">
-                        <i class="ph ph-file-pdf text-lg"></i> Generar Reporte
+                        class="flex items-center gap-2 text-sm font-bold text-white bg-fedemec-accent hover:bg-amber-700 px-3 py-2.5 lg:px-5 rounded-lg shadow-md transition-all transform active:scale-95">
+                        <i class="ph ph-file-pdf text-lg"></i>
+                        <span class="hidden sm:inline">Reporte</span>
                     </button>
                 </div>
             </header>
 
-            <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-5">
                         <div
@@ -180,15 +193,15 @@
                     </div>
                 </div>
 
-                <div id="chartsContainer" class="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-10">
+                <div id="chartsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                 </div>
             </div>
         </main>
     </div>
 
     <dialog id="exportModal"
-        class="p-0 rounded-2xl shadow-2xl border-0 backdrop:bg-slate-900/50 open:animate-fade-in z-50">
-        <div class="w-[500px] bg-white rounded-2xl overflow-hidden">
+        class="p-0 rounded-2xl shadow-2xl border-0 backdrop:bg-slate-900/50 open:animate-fade-in z-50 m-auto">
+        <div class="w-[90vw] max-w-[500px] bg-white rounded-2xl overflow-hidden">
             <div class="bg-fedemec-dark p-5 text-white flex justify-between items-center">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                     <i class="ph ph-file-pdf text-fedemec-accent"></i> Preparar Documento PDF
@@ -325,6 +338,22 @@
         let selectedDate = "";
         let chartInstances = [];
         const brandColors = ['#d97706', '#0f172a', '#3b82f6', '#10b981', '#f59e0b', '#6366f1', '#ef4444'];
+
+        let isSidebarOpen = false;
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            isSidebarOpen = !isSidebarOpen;
+            
+            if (isSidebarOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', fetchData);
         document.getElementById('dateSelect').addEventListener('change', (e) => {
