@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEDEMEC - Plataforma de Salud Misionera</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        fedemec: {
+                            dark: '#1a1a1a', 
+                            accent: '#d97706', 
+                            light: '#f3f4f6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+        }
+
+        .pdf-page-break { 
+            page-break-inside: avoid !important; 
+            break-inside: avoid !important; 
+            margin-bottom: 2rem;
+        }
+        #printableReportTemplate {
+            color: #1e293b;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex overflow-hidden bg-slate-50 relative">
+
+    <div id="app-container" class="flex w-full h-full overflow-hidden">
+        <aside class="w-80 bg-fedemec-dark border-r border-slate-800 flex flex-col h-full shadow-lg z-10 shrink-0 transition-all overflow-y-auto custom-scrollbar relative">
+            <div class="p-6 bg-fedemec-dark border-b border-slate-800 sticky top-0 z-20">
+                <div class="flex flex-col items-center text-center">
+                    <!-- Logo FEDEMEC integrado -->
+                    <div class="bg-white rounded-xl p-2 mb-4 shadow-inner">
+                        <img src="https://lh3.googleusercontent.com/d/1Ddp6T0ZO_gWFndmjAyuSsbfpzRRXmbY_" 
+                             alt="Logo FEDEMEC" 
+                             class="h-20 w-auto object-contain"
+                             onerror="this.src='https://placehold.co/200x100/1a1a1a/d97706?text=FEDEMEC'">
+                    </div>
+                    <h1 class="text-2xl font-extrabold text-white tracking-tight">FEDEMEC</h1>
+                    <p class="text-sm text-fedemec-accent font-medium mt-1 uppercase tracking-wider">Salud Misionera</p>
+                </div>
+            </div>
+
+            <div class="p-5 flex-1 flex flex-col gap-6 bg-slate-900/50 text-slate-300">
+                <div class="hidden">
+                    <input type="text" id="csvUrl" value="https://docs.google.com/spreadsheets/d/15ddaMozwX7-wHba6EMwPmk339-53pkx2D5zJyLp9sNU/export?format=csv&gid=844730995">
+                </div>
+
+                <div>
+                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="ph ph-calendar text-fedemec-accent"></i> Filtrar por Fecha
+                    </h2>
+                    <select id="dateSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-fedemec-accent outline-none cursor-pointer">
+                        <option value="">Histórico Completo</option>
+                    </select>
+                </div>
+
+                <hr class="border-slate-800 opacity-50">
+
+                <div class="flex-1 flex flex-col">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                            <i class="ph ph-funnel text-fedemec-accent"></i> Segmentación
+                        </h2>
+                        <button onclick="clearFilters()" class="text-xs text-fedemec-accent hover:text-amber-500 font-medium transition">Limpiar</button>
+                    </div>
+                    
+                    <div id="smartFilters" class="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
+                        <div class="text-sm text-slate-500 italic py-4 text-center">Cargando filtros...</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-full relative bg-slate-50 z-10">
+            <header class="bg-white border-b border-slate-200 h-20 flex items-center justify-between px-8 shrink-0 shadow-sm">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Tablero de Autoevaluación</h2>
+                    <p class="text-sm text-slate-500">Análisis de resultados y métricas de desempeño.</p>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div id="statusBadge" class="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200 transition-all">
+                        <i class="ph ph-spinner animate-spin"></i> Iniciando...
+                    </div>
+
+                    <button onclick="fetchData()" class="flex items-center gap-2 text-sm font-medium text-slate-600 bg-slate-100 border border-slate-200 px-4 py-2.5 rounded-lg hover:bg-slate-200 transition">
+                        <i class="ph ph-arrows-clockwise"></i> Actualizar
+                    </button>
+
+                    <button onclick="openExportModal()" class="flex items-center gap-2 text-sm font-bold text-white bg-fedemec-accent hover:bg-amber-700 px-5 py-2.5 rounded-lg shadow-md transition-all transform active:scale-95">
+                        <i class="ph ph-file-pdf text-lg"></i> Generar Reporte
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center text-fedemec-accent text-3xl shadow-sm">
+                            <i class="ph ph-users-three"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Evaluaciones</p>
+                            <h3 class="text-3xl font-extrabold text-slate-800" id="kpiCount">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl shadow-sm">
+                            <i class="ph ph-trend-up"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Salud Promedio</p>
+                            <h3 class="text-3xl font-extrabold text-slate-800" id="kpiAverageHealth">-</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 text-3xl shadow-sm">
+                            <i class="ph ph-list-checks"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Indicadores</p>
+                            <h3 class="text-3xl font-extrabold text-slate-800" id="kpiQuestions">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chartsContainer" class="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-10">
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <dialog id="exportModal" class="p-0 rounded-2xl shadow-2xl border-0 backdrop:bg-slate-900/50 open:animate-fade-in z-50">
+        <div class="w-[500px] bg-white rounded-2xl overflow-hidden">
+            <div class="bg-fedemec-dark p-5 text-white flex justify-between items-center">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i class="ph ph-file-pdf text-fedemec-accent"></i> Preparar Documento PDF
+                </h3>
+                <button onclick="document.getElementById('exportModal').close()" class="text-slate-400 hover:text-white transition text-2xl">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            <div class="p-6 flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre de la Iglesia / Denominación</label>
+                    <input type="text" id="pdfChurchName" placeholder="Ej. Iglesia Central..." class="w-full border border-slate-300 rounded-lg px-3 py-2.5 outline-none transition focus:ring-2 focus:ring-fedemec-accent">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre del Líder / Encargado</label>
+                    <input type="text" id="pdfLeaderName" placeholder="Ej. Pastor Juan Pérez" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 outline-none transition focus:ring-2 focus:ring-fedemec-accent">
+                </div>
+                <button id="generatePdfBtn" onclick="generatePDF()" class="w-full bg-fedemec-dark text-white font-bold py-3.5 rounded-xl hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-md relative overflow-hidden mt-2">
+                    <span class="btn-text">Descargar PDF</span>
+                    <span class="btn-loader hidden flex items-center gap-2">
+                        <i class="ph ph-spinner animate-spin text-fedemec-accent"></i> Generando...
+                    </span>
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- PLANTILLA PDF (Optimizada con Logo FEDEMEC) -->
+    <div style="position: absolute; left: -9999px; top: 0; width: 800px; background: white; z-index: -10;">
+        <div id="printableReportTemplate" class="p-10">
+            <!-- Header del PDF -->
+            <div class="flex justify-between items-center border-b-4 border-amber-600 pb-6 mb-8">
+                <div class="flex items-center gap-4">
+                    <!-- Logo en el PDF -->
+                    <div style="width: 80px; height: 80px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; padding: 5px;">
+                        <img src="https://lh3.googleusercontent.com/d/1Ddp6T0ZO_gWFndmjAyuSsbfpzRRXmbY_" 
+                             style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    </div>
+                    <div>
+                        <h1 style="font-size: 28px; font-weight: 800; color: #1a1a1a; margin: 0;">FEDEMEC</h1>
+                        <p style="font-size: 12px; color: #d97706; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0;">Informe de Salud Misionera</p>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <p style="font-size: 10px; color: #64748b; text-transform: uppercase; margin: 0;">Emitido el</p>
+                    <p style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0;" id="reportDatePg1"></p>
+                </div>
+            </div>
+
+            <div style="background: #f1f5f9; border-radius: 12px; padding: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; border: 1px solid #e2e8f0;">
+                <div>
+                    <p style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Entidad Evaluada</p>
+                    <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0;" id="reportChurchName"></h3>
+                </div>
+                <div style="text-align: right;">
+                    <p style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Responsable</p>
+                    <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0;" id="reportLeaderName"></h3>
+                </div>
+            </div>
+
+            <div class="pdf-page-break">
+                <h2 style="font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 16px; border-left: 4px solid #d97706; padding-left: 12px;">Diagnóstico General</h2>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px;">
+                    <div style="grid-column: span 2; background: #1a1a1a; color: white; border-radius: 16px; padding: 24px; text-align: center;">
+                        <h3 style="font-size: 42px; font-weight: 800; color: #d97706; margin: 0;" id="reportTotalScore">0%</h3>
+                        <p style="font-size: 10px; text-transform: uppercase; opacity: 0.8; margin-top: 4px;">Índice de Salud Global</p>
+                    </div>
+                    <div style="grid-column: span 3; background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px;">
+                        <p style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Nivel de Compromiso</p>
+                        <h3 style="font-size: 22px; font-weight: 800; color: #1e293b; margin: 0;" id="reportCommitmentLevel">Cargando...</h3>
+                        <div style="width: 100%; height: 12px; background: #e2e8f0; border-radius: 99px; margin-top: 12px; overflow: hidden;">
+                            <div id="reportProgressBar" style="height: 100%; width: 0%; background: #d97706; transition: width 0.5s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 30px;" class="pdf-page-break">
+                <div>
+                    <h3 style="font-size: 16px; font-weight: 700; color: #065f46; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        Fortalezas Identificadas
+                    </h3>
+                    <ul id="reportStrengthsList" style="list-style: none; padding: 0; margin: 0;"></ul>
+                </div>
+                <div>
+                    <h3 style="font-size: 16px; font-weight: 700; color: #9f1239; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        Áreas de Mejora
+                    </h3>
+                    <ul id="reportWeaknessesList" style="list-style: none; padding: 0; margin: 0;"></ul>
+                </div>
+            </div>
+
+            <div id="reportDetailedQuestions" style="margin-top: 40px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let rawData = [];
+        let filteredData = [];
+        let columns = [];
+        let questionColumns = [];
+        let profileColumns = [];
+        let activeFilters = {};
+        let selectedDate = "";
+        let chartInstances = [];
+        const brandColors = ['#d97706', '#0f172a', '#3b82f6', '#10b981', '#f59e0b', '#6366f1', '#ef4444'];
+
+        document.addEventListener('DOMContentLoaded', fetchData);
+        document.getElementById('dateSelect').addEventListener('change', (e) => {
+            selectedDate = e.target.value;
+            applyFilters();
+        });
+
+        function setStatus(msg, color, icon) {
+            const badge = document.getElementById('statusBadge');
+            badge.innerHTML = `<i class="ph ${icon} text-lg"></i> ${msg}`;
+            badge.className = `flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full bg-${color}-100 text-${color}-700 border border-${color}-200 transition-all`;
+        }
+
+        async function fetchData() {
+            const url = document.getElementById('csvUrl').value;
+            setStatus('Cargando datos...', 'yellow', 'ph-spinner animate-spin');
+            
+            Papa.parse(url, {
+                download: true, header: true, skipEmptyLines: true,
+                complete: (results) => {
+                    if (!results.data || results.data.length === 0) {
+                        setStatus('Sin datos', 'red', 'ph-warning'); return;
+                    }
+                    rawData = results.data.map(row => {
+                        const newRow = {};
+                        Object.keys(row).forEach(key => { if (key && key.trim()) newRow[key.trim()] = row[key]; });
+                        return newRow;
+                    });
+                    columns = Object.keys(rawData[0]);
+                    analyzeSurveyStructure();
+                    applyFilters();
+                    setStatus('Actualizado', 'emerald', 'ph-check-circle');
+                },
+                error: () => setStatus('Error de conexión', 'red', 'ph-wifi-slash')
+            });
+        }
+
+        function analyzeSurveyStructure() {
+            const dateSelect = document.getElementById('dateSelect');
+            let uniqueDates = new Set();
+            questionColumns = []; profileColumns = [];
+            const timestampCol = columns.find(c => /marca temporal|fecha|timestamp/i.test(c));
+
+            if (timestampCol) {
+                rawData.forEach(row => {
+                    if (row[timestampCol]) {
+                        let datePart = String(row[timestampCol]).split(' ')[0];
+                        if(datePart.length >= 8) uniqueDates.add(datePart);
+                    }
+                });
+                dateSelect.innerHTML = '<option value="">Histórico Completo</option>';
+                Array.from(uniqueDates).sort().reverse().forEach(d => dateSelect.add(new Option(d, d)));
+            }
+
+            columns.forEach(col => {
+                if (col === timestampCol || /email|correo|nombre|comentarios/i.test(col)) return;
+                let vals = new Set(rawData.map(r => r[col]).filter(v => v));
+                if (vals.size > 0 && vals.size <= 15) questionColumns.push(col);
+                if (vals.size > 1 && vals.size <= 6) {
+                    profileColumns.push({ name: col, values: Array.from(vals).sort() });
+                }
+            });
+            buildProfileFilters();
+        }
+
+        function buildProfileFilters() {
+            const container = document.getElementById('smartFilters');
+            container.innerHTML = ''; activeFilters = {};
+            profileColumns.slice(0, 4).forEach(col => {
+                activeFilters[col.name] = new Set();
+                const div = document.createElement('div');
+                div.className = 'bg-slate-800 rounded-lg overflow-hidden mb-3 border border-slate-700';
+                div.innerHTML = `<div class="bg-slate-900/50 px-3 py-2 text-xs font-bold text-slate-300 uppercase truncate">${col.name}</div>`;
+                const opts = document.createElement('div');
+                opts.className = 'p-3 flex flex-col gap-2';
+                col.values.forEach(val => {
+                    const l = document.createElement('label');
+                    l.className = 'flex items-center gap-2 cursor-pointer text-sm text-slate-400 hover:text-white transition';
+                    l.innerHTML = `<input type="checkbox" class="rounded text-fedemec-accent w-4 h-4 bg-slate-700 border-slate-600" onchange="toggleFilter('${col.name}', '${val}', this.checked)"> ${val}`;
+                    opts.appendChild(l);
+                });
+                div.appendChild(opts);
+                container.appendChild(div);
+            });
+        }
+
+        function toggleFilter(col, val, isChecked) {
+            isChecked ? activeFilters[col].add(val) : activeFilters[col].delete(val);
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const timestampCol = columns.find(c => /marca temporal|fecha|timestamp/i.test(c));
+            filteredData = rawData.filter(row => {
+                if (selectedDate && timestampCol && String(row[timestampCol]).split(' ')[0] !== selectedDate) return false;
+                for (let col in activeFilters) {
+                    if (activeFilters[col].size > 0 && !activeFilters[col].has(String(row[col]))) return false;
+                }
+                return true;
+            });
+            updateUI();
+        }
+
+        function clearFilters() {
+            document.getElementById('dateSelect').value = ""; selectedDate = "";
+            buildProfileFilters();
+            applyFilters();
+        }
+
+        function getStats(col, data) {
+            let counts = {}; let total = 0; let sum = 0; let isNum = true;
+            data.forEach(r => {
+                let v = String(r[col] || '').trim();
+                if (!v) return;
+                counts[v] = (counts[v] || 0) + 1;
+                total++;
+                let n = parseFloat(v.match(/^\d+/));
+                if (!isNaN(n)) sum += n; else isNum = false;
+            });
+            if (total === 0) return null;
+            let sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+            return {
+                total,
+                mode: sorted[0][0],
+                avg: isNum ? (sum / total).toFixed(1) : null,
+                isNum,
+                data: sorted.map(([l, c]) => ({ label: l, count: c, p: ((c/total)*100).toFixed(1) }))
+            };
+        }
+
+        function updateUI() {
+            document.getElementById('kpiCount').textContent = filteredData.length;
+            document.getElementById('kpiQuestions').textContent = questionColumns.length;
+            
+            let totalAvg = 0, numCount = 0;
+            questionColumns.forEach(q => {
+                const s = getStats(q, filteredData);
+                if (s?.isNum) { totalAvg += parseFloat(s.avg); numCount++; }
+            });
+            document.getElementById('kpiAverageHealth').textContent = numCount > 0 ? `${(totalAvg/numCount).toFixed(1)} / 5` : 'N/A';
+            
+            renderCharts();
+        }
+
+        function renderCharts() {
+            const container = document.getElementById('chartsContainer');
+            container.innerHTML = '';
+            chartInstances.forEach(c => c.destroy()); chartInstances = [];
+
+            questionColumns.forEach((q, i) => {
+                const s = getStats(q, filteredData);
+                if (!s) return;
+                const card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-80';
+                card.innerHTML = `<h4 class="text-sm font-bold text-slate-800 mb-4 truncate">${q}</h4><div class="flex-1 min-h-0"><canvas id="chart_${i}"></canvas></div>`;
+                container.appendChild(card);
+                
+                const ctx = document.getElementById(`chart_${i}`).getContext('2d');
+                chartInstances.push(new Chart(ctx, {
+                    type: s.data.length > 4 ? 'bar' : 'doughnut',
+                    data: {
+                        labels: s.data.map(d => d.label.substring(0, 20)),
+                        datasets: [{ data: s.data.map(d => d.p), backgroundColor: brandColors }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: s.data.length <= 4, position: 'bottom' } } }
+                }));
+            });
+        }
+
+        function openExportModal() {
+            if (filteredData.length === 0) return;
+            document.getElementById('exportModal').showModal();
+        }
+
+        async function generatePDF() {
+            const btn = document.getElementById('generatePdfBtn');
+            const church = document.getElementById('pdfChurchName').value || "Iglesia No Especificada";
+            const leader = document.getElementById('pdfLeaderName').value || "No indicado";
+
+            btn.disabled = true;
+            btn.querySelector('.btn-text').classList.add('hidden');
+            btn.querySelector('.btn-loader').classList.remove('hidden');
+
+            try {
+                let numQ = [];
+                let totalPossible = 0, totalAchieved = 0;
+                
+                questionColumns.forEach(q => {
+                    const s = getStats(q, filteredData);
+                    if (s?.isNum) {
+                        numQ.push({ q, avg: parseFloat(s.avg) });
+                        totalPossible += 5; totalAchieved += parseFloat(s.avg);
+                    }
+                });
+
+                const score = totalPossible > 0 ? Math.round((totalAchieved / totalPossible) * 100) : 0;
+                document.getElementById('reportDatePg1').textContent = new Date().toLocaleDateString();
+                document.getElementById('reportChurchName').textContent = church;
+                document.getElementById('reportLeaderName').textContent = leader;
+                document.getElementById('reportTotalScore').textContent = score + "%";
+                
+                let status = "En Desarrollo";
+                if(score >= 80) status = "Saludable";
+                else if(score < 50) status = "Atención Urgente";
+                document.getElementById('reportCommitmentLevel').textContent = status;
+                document.getElementById('reportProgressBar').style.width = score + "%";
+
+                numQ.sort((a,b) => b.avg - a.avg);
+                const buildItem = (item, color) => `<li style="background: ${color}; border-radius: 8px; padding: 10px; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.05); font-size: 11px;"><b>${item.q}</b><br>Promedio: ${item.avg}</li>`;
+                
+                document.getElementById('reportStrengthsList').innerHTML = numQ.slice(0,3).map(i => buildItem(i, '#ecfdf5')).join('');
+                document.getElementById('reportWeaknessesList').innerHTML = numQ.reverse().slice(0,3).map(i => buildItem(i, '#fff1f2')).join('');
+
+                let detailsHTML = '<h2 style="font-size: 20px; font-weight: 700; color: #1a1a1a; margin-top: 40px; margin-bottom: 20px; border-left: 4px solid #3b82f6; padding-left: 12px;">Desglose de Indicadores</h2>';
+                questionColumns.forEach(q => {
+                    const s = getStats(q, filteredData);
+                    if (!s) return;
+                    detailsHTML += `<div style="margin-bottom: 15px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px;" class="pdf-page-break">
+                        <p style="font-size: 12px; font-weight: 700; margin: 0 0 8px 0;">${q}</p>
+                        <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b; margin-bottom: 5px;">
+                            <span>Moda: ${s.mode}</span>
+                            ${s.avg ? `<span>Promedio: ${s.avg} / 5</span>` : ''}
+                        </div>
+                        <div style="width: 100%; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden;">
+                            <div style="width: ${s.isNum ? (s.avg/5)*100 : 100}%; background: #3b82f6; height: 100%;"></div>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('reportDetailedQuestions').innerHTML = detailsHTML;
+
+                await new Promise(resolve => setTimeout(resolve, 800)); // Esperar carga de imágenes
+
+                const element = document.getElementById('printableReportTemplate');
+                const opt = {
+                    margin: 10,
+                    filename: `Reporte_FEDEMEC_${church.replace(/\s+/g, '_')}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['css', 'legacy'] }
+                };
+
+                await html2pdf().set(opt).from(element).save();
+                document.getElementById('exportModal').close();
+
+            } catch (err) {
+                console.error("PDF Error:", err);
+                setStatus('Error al generar PDF', 'red', 'ph-warning-octagon');
+            } finally {
+                btn.disabled = false;
+                btn.querySelector('.btn-text').classList.remove('hidden');
+                btn.querySelector('.btn-loader').classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
