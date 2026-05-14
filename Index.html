@@ -1,10 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FEDEMEC - Plataforma de Salud Misionera</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -12,8 +14,8 @@
                 extend: {
                     colors: {
                         fedemec: {
-                            dark: '#1a1a1a', 
-                            accent: '#d97706', 
+                            dark: '#1a1a1a',
+                            accent: '#d97706',
                             light: '#f3f4f6'
                         }
                     }
@@ -28,42 +30,56 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
         }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
         dialog::backdrop {
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(2px);
         }
 
-        .pdf-page-break { 
-            page-break-inside: avoid !important; 
-            break-inside: avoid !important; 
+        .pdf-page-break {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
             margin-bottom: 2rem;
         }
+
         #printableReportTemplate {
             color: #1e293b;
             line-height: 1.5;
         }
     </style>
 </head>
+
 <body class="text-slate-800 h-screen flex overflow-hidden bg-slate-50 relative">
 
     <div id="app-container" class="flex w-full h-full overflow-hidden">
-        <aside class="w-80 bg-fedemec-dark border-r border-slate-800 flex flex-col h-full shadow-lg z-10 shrink-0 transition-all overflow-y-auto custom-scrollbar relative">
+        <aside
+            class="w-80 bg-fedemec-dark border-r border-slate-800 flex flex-col h-full shadow-lg z-10 shrink-0 transition-all overflow-y-auto custom-scrollbar relative">
             <div class="p-6 bg-fedemec-dark border-b border-slate-800 sticky top-0 z-20">
                 <div class="flex flex-col items-center text-center">
                     <!-- Logo FEDEMEC integrado -->
                     <div class="bg-white rounded-xl p-2 mb-4 shadow-inner">
-                        <img src="https://lh3.googleusercontent.com/d/1Ddp6T0ZO_gWFndmjAyuSsbfpzRRXmbY_" 
-                             alt="Logo FEDEMEC" 
-                             class="h-20 w-auto object-contain"
-                             onerror="this.src='https://placehold.co/200x100/1a1a1a/d97706?text=FEDEMEC'">
+                        <img src="https://lh3.googleusercontent.com/d/1Ddp6T0ZO_gWFndmjAyuSsbfpzRRXmbY_"
+                            alt="Logo FEDEMEC" class="h-20 w-auto object-contain"
+                            onerror="this.src='https://placehold.co/200x100/1a1a1a/d97706?text=FEDEMEC'">
                     </div>
                     <h1 class="text-2xl font-extrabold text-white tracking-tight">FEDEMEC</h1>
                     <p class="text-sm text-fedemec-accent font-medium mt-1 uppercase tracking-wider">Salud Misionera</p>
@@ -72,14 +88,16 @@
 
             <div class="p-5 flex-1 flex flex-col gap-6 bg-slate-900/50 text-slate-300">
                 <div class="hidden">
-                    <input type="text" id="csvUrl" value="https://docs.google.com/spreadsheets/d/15ddaMozwX7-wHba6EMwPmk339-53pkx2D5zJyLp9sNU/export?format=csv&gid=844730995">
+                    <input type="text" id="csvUrl"
+                        value="https://docs.google.com/spreadsheets/d/15ddaMozwX7-wHba6EMwPmk339-53pkx2D5zJyLp9sNU/export?format=csv&gid=844730995">
                 </div>
 
                 <div>
                     <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <i class="ph ph-calendar text-fedemec-accent"></i> Filtrar por Fecha
                     </h2>
-                    <select id="dateSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-fedemec-accent outline-none cursor-pointer">
+                    <select id="dateSelect"
+                        class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-fedemec-accent outline-none cursor-pointer">
                         <option value="">Histórico Completo</option>
                     </select>
                 </div>
@@ -91,9 +109,10 @@
                         <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                             <i class="ph ph-funnel text-fedemec-accent"></i> Segmentación
                         </h2>
-                        <button onclick="clearFilters()" class="text-xs text-fedemec-accent hover:text-amber-500 font-medium transition">Limpiar</button>
+                        <button onclick="clearFilters()"
+                            class="text-xs text-fedemec-accent hover:text-amber-500 font-medium transition">Limpiar</button>
                     </div>
-                    
+
                     <div id="smartFilters" class="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
                         <div class="text-sm text-slate-500 italic py-4 text-center">Cargando filtros...</div>
                     </div>
@@ -102,22 +121,26 @@
         </aside>
 
         <main class="flex-1 flex flex-col h-full relative bg-slate-50 z-10">
-            <header class="bg-white border-b border-slate-200 h-20 flex items-center justify-between px-8 shrink-0 shadow-sm">
+            <header
+                class="bg-white border-b border-slate-200 h-20 flex items-center justify-between px-8 shrink-0 shadow-sm">
                 <div>
                     <h2 class="text-xl font-bold text-slate-800">Tablero de Autoevaluación</h2>
                     <p class="text-sm text-slate-500">Análisis de resultados y métricas de desempeño.</p>
                 </div>
-                
+
                 <div class="flex items-center gap-4">
-                    <div id="statusBadge" class="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200 transition-all">
+                    <div id="statusBadge"
+                        class="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200 transition-all">
                         <i class="ph ph-spinner animate-spin"></i> Iniciando...
                     </div>
 
-                    <button onclick="fetchData()" class="flex items-center gap-2 text-sm font-medium text-slate-600 bg-slate-100 border border-slate-200 px-4 py-2.5 rounded-lg hover:bg-slate-200 transition">
+                    <button onclick="fetchData()"
+                        class="flex items-center gap-2 text-sm font-medium text-slate-600 bg-slate-100 border border-slate-200 px-4 py-2.5 rounded-lg hover:bg-slate-200 transition">
                         <i class="ph ph-arrows-clockwise"></i> Actualizar
                     </button>
 
-                    <button onclick="openExportModal()" class="flex items-center gap-2 text-sm font-bold text-white bg-fedemec-accent hover:bg-amber-700 px-5 py-2.5 rounded-lg shadow-md transition-all transform active:scale-95">
+                    <button onclick="openExportModal()"
+                        class="flex items-center gap-2 text-sm font-bold text-white bg-fedemec-accent hover:bg-amber-700 px-5 py-2.5 rounded-lg shadow-md transition-all transform active:scale-95">
                         <i class="ph ph-file-pdf text-lg"></i> Generar Reporte
                     </button>
                 </div>
@@ -126,7 +149,8 @@
             <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-5">
-                        <div class="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center text-fedemec-accent text-3xl shadow-sm">
+                        <div
+                            class="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center text-fedemec-accent text-3xl shadow-sm">
                             <i class="ph ph-users-three"></i>
                         </div>
                         <div>
@@ -135,7 +159,8 @@
                         </div>
                     </div>
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-5">
-                        <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl shadow-sm">
+                        <div
+                            class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl shadow-sm">
                             <i class="ph ph-trend-up"></i>
                         </div>
                         <div>
@@ -144,7 +169,8 @@
                         </div>
                     </div>
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-5">
-                        <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 text-3xl shadow-sm">
+                        <div
+                            class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 text-3xl shadow-sm">
                             <i class="ph ph-list-checks"></i>
                         </div>
                         <div>
@@ -160,26 +186,32 @@
         </main>
     </div>
 
-    <dialog id="exportModal" class="p-0 rounded-2xl shadow-2xl border-0 backdrop:bg-slate-900/50 open:animate-fade-in z-50">
+    <dialog id="exportModal"
+        class="p-0 rounded-2xl shadow-2xl border-0 backdrop:bg-slate-900/50 open:animate-fade-in z-50">
         <div class="w-[500px] bg-white rounded-2xl overflow-hidden">
             <div class="bg-fedemec-dark p-5 text-white flex justify-between items-center">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                     <i class="ph ph-file-pdf text-fedemec-accent"></i> Preparar Documento PDF
                 </h3>
-                <button onclick="document.getElementById('exportModal').close()" class="text-slate-400 hover:text-white transition text-2xl">
+                <button onclick="document.getElementById('exportModal').close()"
+                    class="text-slate-400 hover:text-white transition text-2xl">
                     <i class="ph ph-x"></i>
                 </button>
             </div>
             <div class="p-6 flex flex-col gap-4">
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre de la Iglesia / Denominación</label>
-                    <input type="text" id="pdfChurchName" placeholder="Ej. Iglesia Central..." class="w-full border border-slate-300 rounded-lg px-3 py-2.5 outline-none transition focus:ring-2 focus:ring-fedemec-accent">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre de la Iglesia /
+                        Denominación</label>
+                    <input type="text" id="pdfChurchName" placeholder="Ej. Iglesia Central..."
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 outline-none transition focus:ring-2 focus:ring-fedemec-accent">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre del Líder / Encargado</label>
-                    <input type="text" id="pdfLeaderName" placeholder="Ej. Pastor Juan Pérez" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 outline-none transition focus:ring-2 focus:ring-fedemec-accent">
+                    <input type="text" id="pdfLeaderName" placeholder="Ej. Pastor Juan Pérez"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 outline-none transition focus:ring-2 focus:ring-fedemec-accent">
                 </div>
-                <button id="generatePdfBtn" onclick="generatePDF()" class="w-full bg-fedemec-dark text-white font-bold py-3.5 rounded-xl hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-md relative overflow-hidden mt-2">
+                <button id="generatePdfBtn" onclick="generatePDF()"
+                    class="w-full bg-fedemec-dark text-white font-bold py-3.5 rounded-xl hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-md relative overflow-hidden mt-2">
                     <span class="btn-text">Descargar PDF</span>
                     <span class="btn-loader hidden flex items-center gap-2">
                         <i class="ph ph-spinner animate-spin text-fedemec-accent"></i> Generando...
@@ -196,13 +228,16 @@
             <div class="flex justify-between items-center border-b-4 border-amber-600 pb-6 mb-8">
                 <div class="flex items-center gap-4">
                     <!-- Logo en el PDF -->
-                    <div style="width: 80px; height: 80px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; padding: 5px;">
-                        <img src="https://lh3.googleusercontent.com/d/1Ddp6T0ZO_gWFndmjAyuSsbfpzRRXmbY_" 
-                             style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    <div
+                        style="width: 80px; height: 80px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; padding: 5px;">
+                        <img src="https://lh3.googleusercontent.com/d/1Ddp6T0ZO_gWFndmjAyuSsbfpzRRXmbY_"
+                            style="max-width: 100%; max-height: 100%; object-fit: contain;">
                     </div>
                     <div>
                         <h1 style="font-size: 28px; font-weight: 800; color: #1a1a1a; margin: 0;">FEDEMEC</h1>
-                        <p style="font-size: 12px; color: #d97706; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0;">Informe de Salud Misionera</p>
+                        <p
+                            style="font-size: 12px; color: #d97706; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0;">
+                            Informe de Salud Misionera</p>
                     </div>
                 </div>
                 <div style="text-align: right;">
@@ -211,43 +246,65 @@
                 </div>
             </div>
 
-            <div style="background: #f1f5f9; border-radius: 12px; padding: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; border: 1px solid #e2e8f0;">
+            <div
+                style="background: #f1f5f9; border-radius: 12px; padding: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; border: 1px solid #e2e8f0;">
                 <div>
-                    <p style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Entidad Evaluada</p>
-                    <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0;" id="reportChurchName"></h3>
+                    <p
+                        style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">
+                        Entidad Evaluada</p>
+                    <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0;" id="reportChurchName">
+                    </h3>
                 </div>
                 <div style="text-align: right;">
-                    <p style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Responsable</p>
-                    <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0;" id="reportLeaderName"></h3>
+                    <p
+                        style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">
+                        Responsable</p>
+                    <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0;" id="reportLeaderName">
+                    </h3>
                 </div>
             </div>
 
             <div class="pdf-page-break">
-                <h2 style="font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 16px; border-left: 4px solid #d97706; padding-left: 12px;">Diagnóstico General</h2>
+                <h2
+                    style="font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 16px; border-left: 4px solid #d97706; padding-left: 12px;">
+                    Diagnóstico General</h2>
                 <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px;">
-                    <div style="grid-column: span 2; background: #1a1a1a; color: white; border-radius: 16px; padding: 24px; text-align: center;">
-                        <h3 style="font-size: 42px; font-weight: 800; color: #d97706; margin: 0;" id="reportTotalScore">0%</h3>
-                        <p style="font-size: 10px; text-transform: uppercase; opacity: 0.8; margin-top: 4px;">Índice de Salud Global</p>
+                    <div
+                        style="grid-column: span 2; background: #1a1a1a; color: white; border-radius: 16px; padding: 24px; text-align: center;">
+                        <h3 style="font-size: 42px; font-weight: 800; color: #d97706; margin: 0;" id="reportTotalScore">
+                            0%</h3>
+                        <p style="font-size: 10px; text-transform: uppercase; opacity: 0.8; margin-top: 4px;">Índice de
+                            Salud Global</p>
                     </div>
-                    <div style="grid-column: span 3; background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px;">
-                        <p style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Nivel de Compromiso</p>
-                        <h3 style="font-size: 22px; font-weight: 800; color: #1e293b; margin: 0;" id="reportCommitmentLevel">Cargando...</h3>
-                        <div style="width: 100%; height: 12px; background: #e2e8f0; border-radius: 99px; margin-top: 12px; overflow: hidden;">
-                            <div id="reportProgressBar" style="height: 100%; width: 0%; background: #d97706; transition: width 0.5s ease;"></div>
+                    <div
+                        style="grid-column: span 3; background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px;">
+                        <p
+                            style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">
+                            Nivel de Compromiso</p>
+                        <h3 style="font-size: 22px; font-weight: 800; color: #1e293b; margin: 0;"
+                            id="reportCommitmentLevel">Cargando...</h3>
+                        <div
+                            style="width: 100%; height: 12px; background: #e2e8f0; border-radius: 99px; margin-top: 12px; overflow: hidden;">
+                            <div id="reportProgressBar"
+                                style="height: 100%; width: 0%; background: #d97706; transition: width 0.5s ease;">
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 30px;" class="pdf-page-break">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 30px;"
+                class="pdf-page-break">
                 <div>
-                    <h3 style="font-size: 16px; font-weight: 700; color: #065f46; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <h3
+                        style="font-size: 16px; font-weight: 700; color: #065f46; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                         Fortalezas Identificadas
                     </h3>
                     <ul id="reportStrengthsList" style="list-style: none; padding: 0; margin: 0;"></ul>
                 </div>
                 <div>
-                    <h3 style="font-size: 16px; font-weight: 700; color: #9f1239; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <h3
+                        style="font-size: 16px; font-weight: 700; color: #9f1239; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                         Áreas de Mejora
                     </h3>
                     <ul id="reportWeaknessesList" style="list-style: none; padding: 0; margin: 0;"></ul>
@@ -284,7 +341,7 @@
         async function fetchData() {
             const url = document.getElementById('csvUrl').value;
             setStatus('Cargando datos...', 'yellow', 'ph-spinner animate-spin');
-            
+
             Papa.parse(url, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: (results) => {
@@ -315,7 +372,7 @@
                 rawData.forEach(row => {
                     if (row[timestampCol]) {
                         let datePart = String(row[timestampCol]).split(' ')[0];
-                        if(datePart.length >= 8) uniqueDates.add(datePart);
+                        if (datePart.length >= 8) uniqueDates.add(datePart);
                     }
                 });
                 dateSelect.innerHTML = '<option value="">Histórico Completo</option>';
@@ -388,27 +445,27 @@
                 if (!isNaN(n)) sum += n; else isNum = false;
             });
             if (total === 0) return null;
-            let sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+            let sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
             return {
                 total,
                 mode: sorted[0][0],
                 avg: isNum ? (sum / total).toFixed(1) : null,
                 isNum,
-                data: sorted.map(([l, c]) => ({ label: l, count: c, p: ((c/total)*100).toFixed(1) }))
+                data: sorted.map(([l, c]) => ({ label: l, count: c, p: ((c / total) * 100).toFixed(1) }))
             };
         }
 
         function updateUI() {
             document.getElementById('kpiCount').textContent = filteredData.length;
             document.getElementById('kpiQuestions').textContent = questionColumns.length;
-            
+
             let totalAvg = 0, numCount = 0;
             questionColumns.forEach(q => {
                 const s = getStats(q, filteredData);
                 if (s?.isNum) { totalAvg += parseFloat(s.avg); numCount++; }
             });
-            document.getElementById('kpiAverageHealth').textContent = numCount > 0 ? `${(totalAvg/numCount).toFixed(1)} / 5` : 'N/A';
-            
+            document.getElementById('kpiAverageHealth').textContent = numCount > 0 ? `${(totalAvg / numCount).toFixed(1)} / 5` : 'N/A';
+
             renderCharts();
         }
 
@@ -424,7 +481,7 @@
                 card.className = 'bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-80';
                 card.innerHTML = `<h4 class="text-sm font-bold text-slate-800 mb-4 truncate">${q}</h4><div class="flex-1 min-h-0"><canvas id="chart_${i}"></canvas></div>`;
                 container.appendChild(card);
-                
+
                 const ctx = document.getElementById(`chart_${i}`).getContext('2d');
                 chartInstances.push(new Chart(ctx, {
                     type: s.data.length > 4 ? 'bar' : 'doughnut',
@@ -454,7 +511,7 @@
             try {
                 let numQ = [];
                 let totalPossible = 0, totalAchieved = 0;
-                
+
                 questionColumns.forEach(q => {
                     const s = getStats(q, filteredData);
                     if (s?.isNum) {
@@ -468,18 +525,18 @@
                 document.getElementById('reportChurchName').textContent = church;
                 document.getElementById('reportLeaderName').textContent = leader;
                 document.getElementById('reportTotalScore').textContent = score + "%";
-                
+
                 let status = "En Desarrollo";
-                if(score >= 80) status = "Saludable";
-                else if(score < 50) status = "Atención Urgente";
+                if (score >= 80) status = "Saludable";
+                else if (score < 50) status = "Atención Urgente";
                 document.getElementById('reportCommitmentLevel').textContent = status;
                 document.getElementById('reportProgressBar').style.width = score + "%";
 
-                numQ.sort((a,b) => b.avg - a.avg);
+                numQ.sort((a, b) => b.avg - a.avg);
                 const buildItem = (item, color) => `<li style="background: ${color}; border-radius: 8px; padding: 10px; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.05); font-size: 11px;"><b>${item.q}</b><br>Promedio: ${item.avg}</li>`;
-                
-                document.getElementById('reportStrengthsList').innerHTML = numQ.slice(0,3).map(i => buildItem(i, '#ecfdf5')).join('');
-                document.getElementById('reportWeaknessesList').innerHTML = numQ.reverse().slice(0,3).map(i => buildItem(i, '#fff1f2')).join('');
+
+                document.getElementById('reportStrengthsList').innerHTML = numQ.slice(0, 3).map(i => buildItem(i, '#ecfdf5')).join('');
+                document.getElementById('reportWeaknessesList').innerHTML = numQ.reverse().slice(0, 3).map(i => buildItem(i, '#fff1f2')).join('');
 
                 let detailsHTML = '<h2 style="font-size: 20px; font-weight: 700; color: #1a1a1a; margin-top: 40px; margin-bottom: 20px; border-left: 4px solid #3b82f6; padding-left: 12px;">Desglose de Indicadores</h2>';
                 questionColumns.forEach(q => {
@@ -492,7 +549,7 @@
                             ${s.avg ? `<span>Promedio: ${s.avg} / 5</span>` : ''}
                         </div>
                         <div style="width: 100%; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden;">
-                            <div style="width: ${s.isNum ? (s.avg/5)*100 : 100}%; background: #3b82f6; height: 100%;"></div>
+                            <div style="width: ${s.isNum ? (s.avg / 5) * 100 : 100}%; background: #3b82f6; height: 100%;"></div>
                         </div>
                     </div>`;
                 });
@@ -524,4 +581,5 @@
         }
     </script>
 </body>
+
 </html>
